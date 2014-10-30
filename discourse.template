@@ -157,9 +157,7 @@
                 "InstanceType": "t2.medium",
                 "KeyName": "csa-discourse-key",
                 "SecurityGroups": [
-                    {
-                        "Ref": "sg-5798df32"
-                    }
+                     "sg-5798df32"
                 ],
                 "BlockDeviceMappings": [
                     {
