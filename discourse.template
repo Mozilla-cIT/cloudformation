@@ -1,186 +1,247 @@
 {
-  "AWSTemplateFormatVersion": "2010-09-09",
-  "Parameters" : {
-    "discourseNameParam" : {
-    "Type" : "String",
-    "Default" : "discourse",
-    "Description" : "Enter a name for this Discourse instance. eg guides, fantheflames"
-    },
-    "discourseEnvParam" : {
-    "Type" : "String",
-    "Default" : "production",
-    "AllowedValues" : ["dev", "staging", "production"],
-    "Description" : "Enter env dev, staging or production"
-  },
-  "Resources": {
-    "discourseas": {
-      "Type": "AWS::AutoScaling::AutoScalingGroup",
-      "Properties": {
-        "AvailabilityZones": [
-          "us-east-1c",
-          "us-east-1b",
-          "us-east-1d"
-        ],
-        "Cooldown": "300",
-        "DesiredCapacity": "1",
-        "MaxSize": "1",
-        "MinSize": "1",
-        "HealthCheckGracePeriod": "300",
-        "HealthCheckType": "EC2",
-        "VPCZoneIdentifier": [
-          "subnet-df27e6a8",
-          "subnet-771cff2e",
-          "subnet-8ca2a1a4"
-        ],
-        "NotificationConfiguration": {
-          "TopicARN": "arn:aws:sns:us-east-1:811385889773:ec2-autoscaling",
-          "NotificationTypes": [
-            "autoscaling:EC2_INSTANCE_LAUNCH",
-            "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
-            "autoscaling:EC2_INSTANCE_TERMINATE",
-            "autoscaling:EC2_INSTANCE_TERMINATE_ERROR",
-            "autoscaling:EC2_INSTANCE_LAUNCH",
-            "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
-            "autoscaling:EC2_INSTANCE_TERMINATE",
-            "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
-          ]
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters": {
+        "discourseNameParam": {
+            "Type": "String",
+            "Default": "discourse",
+            "Description": "Enter a name for this Discourse instance. eg guides, fantheflames"
         },
-        "LaunchConfigurationName": {
-          "Ref": "discourselc"
-        },
-        "LoadBalancerNames": [
-          {"Fn::Join": [ "-", [ "csa", {"Ref": "discourseNameParam"}, {"Ref": "discourseEnvParam"} ] ]}
-        ],
-        "Tags": [
-          {
-            "Key": "app",
-            "Value": "discourse",
-            "PropagateAtLaunch": true
-          },
-          {
-            "Key": "env",
-            "Value": {"Ref": "discourseEnvParam"},
-            "PropagateAtLaunch": true
-          },
-          {
-            "Key": "project",
-            "Value": "communityit",
-            "PropagateAtLaunch": true
-          }
-        ]
-      }
-    },
-    "discourses3": {
-      "Type": "AWS::S3::Bucket",
-      "Properties": {
-        "BucketName" : {"Fn::Join": [ "-", [ "csa", {"Ref": "discourseNameParam"}, {"Ref": "discourseEnvParam"}, "uploads" ] ]}
-      }
-    },
-    "cachecsaguidesprodb": {
-      "Type": "AWS::ElastiCache::CacheCluster",
-      "Properties": {
-        "ClusterName" : {"Fn::Join": [ "-", [ "csa", {"Ref": "discourseNameParam"}, {"Ref": "discourseEnvParam"}, "cache" ] ]},
-        "AutoMinorVersionUpgrade": "true",
-        "CacheNodeType": "cache.t1.micro",
-        "Engine": "redis",
-        "EngineVersion": "2.8.6",
-        "NumCacheNodes": "1",
-        "PreferredAvailabilityZone": "us-east-1d",
-        "PreferredMaintenanceWindow": "fri:04:00-fri:05:00",
-        "VpcSecurityGroupIds": "sg-c36523a6"
-      }
-    },
-    "topiccsanotifications": {
-      "Type": "AWS::SNS::Topic",
-      "Properties": {
-        "DisplayName": "csa-notifications",
-        "Subscription": [
-          {
-            "Endpoint": "https://alert.victorops.com/integrations/cloudwatch/20131130/alert/a80fb6ea-dea0-49e4-a53f-657e2cfddd99/community-it",
-            "Protocol": "https"
-          }
-        ]
-      }
-    },
-    "discourselc": {
-      "Type": "AWS::AutoScaling::LaunchConfiguration",
-      "Properties": {
-        "ImageId": "ami-9eaa1cf6",
-        "InstanceType": "t2.medium",
-        "KeyName": "csa-discourse-key",
-        "SecurityGroups": [
-          {
-            "Ref": "sg-5798df32"
-          }
-        ],
-        "BlockDeviceMappings": [
-          {
-            "DeviceName": "/dev/sda1",
-            "Ebs": {
-              "VolumeSize": 25
-            }
-          }
-        ]
-      }
-    },
-    "s3policycsadiscourseupload": {
-      "Type": "AWS::S3::BucketPolicy",
-      "Properties": {
-        "Bucket": {
-          "Ref": "discourses3"
-        },
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
-                "s3:*"
-              ],
-              "Effect": "Allow",
-              "Principal": {
-                "AWS": [
-                  "arn:aws:iam::119057770964:user/tanner"
-                ]
-              },
-              "Resource": [
-                {
-                  "Fn::Join": [
-                    "",
-                    [
-                      "arn:aws:s3:::",
-                      {
-                        "Ref": "discourses3"
-                      },
-                      "/*"
-                    ]
-                  ]
-                }
-              ],
-              "Sid": "Stmt1406746010136"
-            }
-          ]
+        "discourseEnvParam": {
+            "Type": "String",
+            "Default": "production",
+            "AllowedValues": [
+                "dev",
+                "staging",
+                "production"
+            ],
+            "Description": "Enter env dev, staging or production"
         }
-      }
     },
-    "alarmawselbcsadiscourseproductionHighUnhealthyHosts": {
-      "Type": "AWS::CloudWatch::Alarm",
-      "Properties": {
-        "ActionsEnabled": "true",
-        "AlarmDescription": "Created from EC2 Console",
-        "ComparisonOperator": "LessThanThreshold",
-        "EvaluationPeriods": "1",
-        "MetricName": "UnHealthyHostCount",
-        "Namespace": "AWS/ELB",
-        "Period": "60",
-        "Statistic": "Sum",
-        "Threshold": "0.0",
-        "Dimensions": [
-          {
-            "Name": "LoadBalancerName",
-            "Value": {"Fn::Join": [ "-", [ "csa", {"Ref": "discourseNameParam"}, {"Ref": "discourseEnvParam"} ] ]}
-          }
-        ]
-      }
-    }
-  },
-  "Description": "Discourse stack"
+    "Resources": {
+        "discourseas": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "AvailabilityZones": [
+                    "us-east-1c",
+                    "us-east-1b",
+                    "us-east-1d"
+                ],
+                "Cooldown": "300",
+                "DesiredCapacity": "1",
+                "MaxSize": "1",
+                "MinSize": "1",
+                "HealthCheckGracePeriod": "300",
+                "HealthCheckType": "EC2",
+                "VPCZoneIdentifier": [
+                    "subnet-df27e6a8",
+                    "subnet-771cff2e",
+                    "subnet-8ca2a1a4"
+                ],
+                "NotificationConfiguration": {
+                    "TopicARN": "arn:aws:sns:us-east-1:811385889773:ec2-autoscaling",
+                    "NotificationTypes": [
+                        "autoscaling:EC2_INSTANCE_LAUNCH",
+                        "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                        "autoscaling:EC2_INSTANCE_TERMINATE",
+                        "autoscaling:EC2_INSTANCE_TERMINATE_ERROR",
+                        "autoscaling:EC2_INSTANCE_LAUNCH",
+                        "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                        "autoscaling:EC2_INSTANCE_TERMINATE",
+                        "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+                    ]
+                },
+                "LaunchConfigurationName": {
+                    "Ref": "discourselc"
+                },
+                "LoadBalancerNames": [
+                    {
+                        "Fn::Join": [
+                            "-",
+                            [
+                                "csa",
+                                {
+                                    "Ref": "discourseNameParam"
+                                },
+                                {
+                                    "Ref": "discourseEnvParam"
+                                }
+                            ]
+                        ]
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "app",
+                        "Value": "discourse",
+                        "PropagateAtLaunch": true
+                    },
+                    {
+                        "Key": "env",
+                        "Value": {
+                            "Ref": "discourseEnvParam"
+                        },
+                        "PropagateAtLaunch": true
+                    },
+                    {
+                        "Key": "project",
+                        "Value": "communityit",
+                        "PropagateAtLaunch": true
+                    }
+                ]
+            }
+        },
+        "discourses3": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+                "BucketName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "csa",
+                            {
+                                "Ref": "discourseNameParam"
+                            },
+                            {
+                                "Ref": "discourseEnvParam"
+                            },
+                            "uploads"
+                        ]
+                    ]
+                }
+            }
+        },
+        "cachecsaguidesprodb": {
+            "Type": "AWS::ElastiCache::CacheCluster",
+            "Properties": {
+                "ClusterName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "csa",
+                            {
+                                "Ref": "discourseNameParam"
+                            },
+                            {
+                                "Ref": "discourseEnvParam"
+                            },
+                            "cache"
+                        ]
+                    ]
+                },
+                "AutoMinorVersionUpgrade": "true",
+                "CacheNodeType": "cache.t1.micro",
+                "Engine": "redis",
+                "EngineVersion": "2.8.6",
+                "NumCacheNodes": "1",
+                "PreferredAvailabilityZone": "us-east-1d",
+                "PreferredMaintenanceWindow": "fri:04:00-fri:05:00",
+                "VpcSecurityGroupIds": "sg-c36523a6"
+            }
+        },
+        "topiccsanotifications": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+                "DisplayName": "csa-notifications",
+                "Subscription": [
+                    {
+                        "Endpoint": "https://alert.victorops.com/integrations/cloudwatch/20131130/alert/a80fb6ea-dea0-49e4-a53f-657e2cfddd99/community-it",
+                        "Protocol": "https"
+                    }
+                ]
+            }
+        },
+        "discourselc": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Properties": {
+                "ImageId": "ami-9eaa1cf6",
+                "InstanceType": "t2.medium",
+                "KeyName": "csa-discourse-key",
+                "SecurityGroups": [
+                    {
+                        "Ref": "sg-5798df32"
+                    }
+                ],
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeSize": 25
+                        }
+                    }
+                ]
+            }
+        },
+        "s3policycsadiscourseupload": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+                "Bucket": {
+                    "Ref": "discourses3"
+                },
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": [
+                                "s3:*"
+                            ],
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": [
+                                    "arn:aws:iam::119057770964:user/tanner"
+                                ]
+                            },
+                            "Resource": [
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "arn:aws:s3:::",
+                                            {
+                                                "Ref": "discourses3"
+                                            },
+                                            "/*"
+                                        ]
+                                    ]
+                                }
+                            ],
+                            "Sid": "Stmt1406746010136"
+                        }
+                    ]
+                }
+            }
+        },
+        "alarmawselbcsadiscourseproductionHighUnhealthyHosts": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "ActionsEnabled": "true",
+                "AlarmDescription": "Created from EC2 Console",
+                "ComparisonOperator": "LessThanThreshold",
+                "EvaluationPeriods": "1",
+                "MetricName": "UnHealthyHostCount",
+                "Namespace": "AWS/ELB",
+                "Period": "60",
+                "Statistic": "Sum",
+                "Threshold": "0.0",
+                "Dimensions": [
+                    {
+                        "Name": "LoadBalancerName",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    "csa",
+                                    {
+                                        "Ref": "discourseNameParam"
+                                    },
+                                    {
+                                        "Ref": "discourseEnvParam"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "Description": "Discourse stack"
 }
