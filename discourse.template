@@ -123,8 +123,7 @@
                             },
                             {
                                 "Ref": "discourseEnvParam"
-                            },
-                            "cache"
+                            }
                         ]
                     ]
                 },
@@ -135,7 +134,9 @@
                 "NumCacheNodes": "1",
                 "PreferredAvailabilityZone": "us-east-1d",
                 "PreferredMaintenanceWindow": "fri:04:00-fri:05:00",
-                "VpcSecurityGroupIds": "sg-c36523a6"
+                "VpcSecurityGroupIds": [
+                  "sg-c36523a6"
+                ]
             }
         },
         "topiccsanotifications": {
