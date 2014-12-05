@@ -18,7 +18,7 @@
         }
     },
     "Resources": {
-        "discourseas": {
+        "as": {
             "Type": "AWS::AutoScaling::AutoScalingGroup",
             "Properties": {
                 "AvailabilityZones": [
@@ -47,7 +47,7 @@
                     ]
                 },
                 "LaunchConfigurationName": {
-                    "Ref": "discourselc"
+                    "Ref": "lc"
                 },
                 "LoadBalancerNames": [
                     {
@@ -86,26 +86,6 @@
                 ]
             }
         },
-        "discourses3": {
-            "Type": "AWS::S3::Bucket",
-            "Properties": {
-                "BucketName": {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            "csa",
-                            {
-                                "Ref": "discourseNameParam"
-                            },
-                            {
-                                "Ref": "discourseEnvParam"
-                            },
-                            "uploads"
-                        ]
-                    ]
-                }
-            }
-        },
         "cachecsaguidesprodb": {
             "Type": "AWS::ElastiCache::CacheCluster",
             "Properties": {
@@ -130,6 +110,7 @@
                 "NumCacheNodes": "1",
                 "PreferredAvailabilityZone": "us-east-1d",
                 "PreferredMaintenanceWindow": "fri:04:00-fri:05:00",
+                "CacheSubnetGroupName": "csa-discourse-production-cache",
                 "VpcSecurityGroupIds": [
                   "sg-c36523a6"
                 ]
@@ -147,7 +128,7 @@
                 ]
             }
         },
-        "discourselc": {
+        "lc": {
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
                 "ImageId": "ami-9eaa1cf6",
@@ -166,44 +147,56 @@
                 ]
             }
         },
-        "s3policycsadiscourseupload": {
-            "Type": "AWS::S3::BucketPolicy",
-            "Properties": {
-                "Bucket": {
-                    "Ref": "discourses3"
-                },
-                "PolicyDocument": {
-                    "Statement": [
-                        {
-                            "Action": [
-                                "s3:*"
-                            ],
-                            "Effect": "Allow",
-                            "Principal": {
-                                "AWS": [
-                                    "arn:aws:iam::119057770964:user/tanner"
-                                ]
-                            },
-                            "Resource": [
+        "lb" : {
+  			"Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+  			"Properties" : {
+    			"Subnets": ["subnet-771cff2e", "subnet-8ca2a1a4", "subnet-df27e6a8"],
+    			"LoadBalancerName": {
+                        "Fn::Join": [
+                            "-",
+                            [
+                                "csa",
                                 {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "arn:aws:s3:::",
-                                            {
-                                                "Ref": "discourses3"
-                                            },
-                                            "/*"
-                                        ]
-                                    ]
+                                    "Ref": "discourseNameParam"
+                                },
+                                {
+                                    "Ref": "discourseEnvParam"
                                 }
-                            ],
-                            "Sid": "Stmt1406746010136"
+                            ]
+                        ]
+                    },
+    			"Listeners" : [ {
+      			"LoadBalancerPort" : "80",
+      			"InstancePort" : "80",
+      			"Protocol" : "HTTP"
+    		} ],
+    		"HealthCheck" : {
+      			"Target" : {
+        		"Fn::Join" : [ "", [ "HTTP:", "80", "/" ] ]
+      			},
+      			"HealthyThreshold" : "3",
+      			"UnhealthyThreshold" : "5",
+      			"Interval" : "30",
+      			"Timeout" : "5"
+    		},
+    		"Tags": [
+                    {
+                        "Key": "app",
+                        "Value": "discourse"
+                    },
+                    {
+                        "Key": "env",
+                        "Value": {
+                            "Ref": "discourseEnvParam"
                         }
-                    ]
-                }
+                    },
+                    {
+                        "Key": "project",
+                        "Value": "communityit"
+                    }
+                ]
             }
-        },
+		},
         "alarmawselbcsadiscourseproductionHighUnhealthyHosts": {
             "Type": "AWS::CloudWatch::Alarm",
             "Properties": {
@@ -238,5 +231,5 @@
             }
         }
     },
-    "Description": "Discourse stack"
+    "Description": "Discourse resources"
 }
