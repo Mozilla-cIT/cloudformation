@@ -10,12 +10,14 @@
             "Type": "String",
             "Default": "production",
             "AllowedValues": [
-                "dev",
                 "staging",
                 "production"
             ],
-            "Description": "Enter env dev, staging or production"
+            "Description": "Enter env staging or production"
         }
+    },
+    "Conditions" : {
+        "checkEnv" : {"Fn::Equals": ["production", {"Ref": "discourseEnvParam"}]}
     },
     "Resources": {
         "as": {
@@ -86,7 +88,7 @@
                 ]
             }
         },
-        "cachecsaguidesprodb": {
+        "cache": {
             "Type": "AWS::ElastiCache::CacheCluster",
             "Properties": {
                 "ClusterName": {
@@ -114,6 +116,31 @@
                 "VpcSecurityGroupIds": [
                   "sg-c36523a6"
                 ]
+            }
+        },
+        "cacheDNS" : {
+            "Type" : "AWS::Route53::RecordSet",
+            "Properties" : {
+                "HostedZoneId" : {
+                    "Fn::If" : [
+                        "checkEnv",
+                        "/hostedzone/Z8AD0YHRP6LI1",
+                        "/hostedzone/Z1JZC5QJUY8F7L"
+                        ]},
+                "Name" : {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "csa",
+                            {
+                                "Ref": "discourseNameParam"
+                            }
+                        ]
+                    ]
+                },
+                "Type" : "CNAME",
+                "ResourceRecords" : [ {"Fn::GetAtt": ["cache", "ConfigurationEndpoint.Address"]} ],
+                "TTL" : "900"
             }
         },
         "topiccsanotifications": {
@@ -151,6 +178,7 @@
   			"Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
   			"Properties" : {
     			"Subnets": ["subnet-771cff2e", "subnet-8ca2a1a4", "subnet-df27e6a8"],
+                "SecurityGroups": ["sg-5798df32"],
     			"LoadBalancerName": {
                         "Fn::Join": [
                             "-",
@@ -229,6 +257,45 @@
                     }
                 ]
             }
+        }
+    },
+    "Outputs" : {
+        "cacheEndpoint" : {
+        "Value" : {
+                    "Fn::Join": [
+                        ".",
+                        [{
+                            "Fn::Join": [
+                                "-",
+                                    [
+                                    "csa",
+                                    {
+                                        "Ref": "discourseNameParam"
+                                    }
+                                ]
+                            ]
+                        },
+                                    {"Fn::If" : [
+                        "checkEnv",
+                        "mofoprod.net",
+                        "mofostaging.net"
+                        ]}
+                                ]
+                            ]
+                        },
+        "Description" : "This is the address of the Redis server. Use this for the DISCOURSE_REDIS_HOST in app.yml."
+        },
+        "dbHost" : {
+            "Value" : {"Fn::If" : [
+                        "checkEnv",
+                        "pgshared-db.mofoprod.net",
+                        "pgshared-db.mofostaging.net"
+                        ]},
+            "Description" : "You need to make the database yourself on this server. Use this value for DISCOURSE_DB_HOST."
+        },
+        "lbDNSName" : {
+            "Value" : {"Fn::GetAtt": ["lb", "DNSName" ] },
+            "Description" : "This is the DNS name for the load balancer. On your domain name DNS settings, make an alias A record using this name."
         }
     },
     "Description": "Discourse resources"
