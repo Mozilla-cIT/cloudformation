@@ -118,31 +118,6 @@
                 ]
             }
         },
-        "cacheDNS" : {
-            "Type" : "AWS::Route53::RecordSet",
-            "Properties" : {
-                "HostedZoneId" : {
-                    "Fn::If" : [
-                        "checkEnv",
-                        "/hostedzone/Z8AD0YHRP6LI1",
-                        "/hostedzone/Z1JZC5QJUY8F7L"
-                        ]},
-                "Name" : {
-                    "Fn::Join": [
-                        "-",
-                        [
-                            "csa",
-                            {
-                                "Ref": "discourseNameParam"
-                            }
-                        ]
-                    ]
-                },
-                "Type" : "CNAME",
-                "ResourceRecords" : [ {"Fn::GetAtt": ["cache", "ConfigurationEndpoint.Address"]} ],
-                "TTL" : "900"
-            }
-        },
         "topiccsanotifications": {
             "Type": "AWS::SNS::Topic",
             "Properties": {
@@ -260,31 +235,6 @@
         }
     },
     "Outputs" : {
-        "cacheEndpoint" : {
-        "Value" : {
-                    "Fn::Join": [
-                        ".",
-                        [{
-                            "Fn::Join": [
-                                "-",
-                                    [
-                                    "csa",
-                                    {
-                                        "Ref": "discourseNameParam"
-                                    }
-                                ]
-                            ]
-                        },
-                                    {"Fn::If" : [
-                        "checkEnv",
-                        "mofoprod.net",
-                        "mofostaging.net"
-                        ]}
-                                ]
-                            ]
-                        },
-        "Description" : "This is the address of the Redis server. Use this for the DISCOURSE_REDIS_HOST in app.yml."
-        },
         "dbHost" : {
             "Value" : {"Fn::If" : [
                         "checkEnv",
