@@ -108,7 +108,7 @@
                 "AutoMinorVersionUpgrade": "true",
                 "CacheNodeType": "cache.t1.micro",
                 "Engine": "redis",
-                "EngineVersion": "2.8.6",
+                "EngineVersion": "2.8.21",
                 "NumCacheNodes": "1",
                 "PreferredAvailabilityZone": "us-east-1d",
                 "PreferredMaintenanceWindow": "fri:04:00-fri:05:00",
