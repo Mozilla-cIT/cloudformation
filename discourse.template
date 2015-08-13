@@ -239,8 +239,8 @@
         "dbHost" : {
             "Value" : {"Fn::If" : [
                         "checkEnv",
-                        "pgshared-db.mofoprod.net",
-                        "pgshared-db.mofostaging.net"
+                        "discourse-shared-db.mofoprod.net",
+                        "discourse-shared-db.mofostaging.net"
                         ]},
             "Description" : "You need to make the database yourself on this server. Use this value for DISCOURSE_DB_HOST."
         },
