@@ -135,6 +135,7 @@
             "Properties": {
                 "ImageId": "ami-9eaa1cf6",
                 "InstanceType": "t2.medium",
+                "IamInstanceProfile" : "arn:aws:iam::811385889773:instance-profile/csa-discourse-role",
                 "KeyName": "csa-discourse-cf",
                 "SecurityGroups": [
                      "sg-5798df32"
