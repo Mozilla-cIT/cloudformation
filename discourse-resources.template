@@ -1,0 +1,65 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters": {
+        "discourseNameParam": {
+            "Type": "String",
+            "Default": "discourse",
+            "Description": "Enter a name for this Discourse instance. eg guides, fantheflames"
+        },
+        "discourseEnvParam": {
+            "Type": "String",
+            "Default": "production",
+            "AllowedValues": [
+                "staging",
+                "production"
+            ],
+            "Description": "Enter env staging or production"
+        }
+    },
+    "Conditions" : {
+        "checkEnv" : {"Fn::Equals": ["production", {"Ref": "discourseEnvParam"}]}
+    },
+    "Resources": {
+        "cache": {
+            "Type": "AWS::ElastiCache::CacheCluster",
+            "Properties": {
+                "ClusterName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "csa",
+                            {
+                                "Ref": "discourseNameParam"
+                            },
+                            {
+                                "Ref": "discourseEnvParam"
+                            }
+                        ]
+                    ]
+                },
+                "AutoMinorVersionUpgrade": "true",
+                "CacheNodeType": "cache.t1.micro",
+                "Engine": "redis",
+                "EngineVersion": "2.8.21",
+                "NumCacheNodes": "1",
+                "PreferredAvailabilityZone": "us-east-1d",
+                "PreferredMaintenanceWindow": "fri:04:00-fri:05:00",
+                "CacheSubnetGroupName": "csa-discourse-production-cache",
+                "VpcSecurityGroupIds": [
+                  "sg-c36523a6"
+                ]
+            }
+        },
+    },
+    "Outputs" : {
+        "dbHost" : {
+            "Value" : {"Fn::If" : [
+                        "checkEnv",
+                        "discourse-shared-db.mofoprod.net",
+                        "discourse-shared-db.mofostaging.net"
+                        ]},
+            "Description" : "You need to make the database yourself on this server. Use this value for DISCOURSE_DB_HOST."
+        }
+    },
+    "Description": "Discourse resources"
+}

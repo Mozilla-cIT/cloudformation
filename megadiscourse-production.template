@@ -1,0 +1,154 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {
+        "as": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "AvailabilityZones": [
+                    "us-east-1c",
+                    "us-east-1b",
+                    "us-east-1d"
+                ],
+                "Cooldown": "300",
+                "DesiredCapacity": "1",
+                "MaxSize": "1",
+                "MinSize": "1",
+                "HealthCheckGracePeriod": "300",
+                "HealthCheckType": "EC2",
+                "VPCZoneIdentifier": [
+                    "subnet-df27e6a8",
+                    "subnet-771cff2e",
+                    "subnet-8ca2a1a4"
+                ],
+                "NotificationConfiguration": {
+                    "TopicARN": "arn:aws:sns:us-east-1:811385889773:ec2-autoscaling",
+                    "NotificationTypes": [
+                        "autoscaling:EC2_INSTANCE_LAUNCH",
+                        "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                        "autoscaling:EC2_INSTANCE_TERMINATE",
+                        "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+                    ]
+                },
+                "LaunchConfigurationName": {
+                    "Ref": "lc"
+                },
+                "LoadBalancerNames": [
+                    {
+                        "Fn::Join": [
+                            "-",
+                            [
+                                "csa",
+                                {
+                                    "Ref": "discourseNameParam"
+                                },
+                                {
+                                    "Ref": "discourseEnvParam"
+                                }
+                            ]
+                        ]
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "app",
+                        "Value": "discourse",
+                        "PropagateAtLaunch": true
+                    },
+                    {
+                        "Key": "env",
+                        "Value": "production",
+                        "PropagateAtLaunch": true
+                    },
+                    {
+                        "Key": "project",
+                        "Value": "communityit",
+                        "PropagateAtLaunch": true
+                    }
+                ]
+            }
+        },
+        "lc": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Properties": {
+                "ImageId": "ami-d05e75b8",
+                "InstanceType": "t2.large",
+                "IamInstanceProfile" : "arn:aws:iam::811385889773:instance-profile/csa-discourse-role",
+                "KeyName": "csa-ansible-access",
+                "SecurityGroups": [
+                     "sg-5798df32"
+                ],
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeSize": 50
+                        }
+                    }
+                ]
+            }
+        },
+        "lb" : {
+          "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+          "Properties" : {
+    			"Subnets": ["subnet-771cff2e", "subnet-8ca2a1a4", "subnet-df27e6a8"],
+                "SecurityGroups": ["sg-5798df32"],
+    			"LoadBalancerName": "csa-discourse-production-lb",
+    			"Listeners" : [ {
+      			"LoadBalancerPort" : "80",
+      			"InstancePort" : "80",
+      			"Protocol" : "HTTP"
+    		  } ],
+    		  "HealthCheck" : {
+      			  "Target" : {
+        		  "Fn::Join" : [ "", [ "HTTP:", "80", "/" ] ]
+      			  },
+      			  "HealthyThreshold" : "3",
+      			  "UnhealthyThreshold" : "5",
+      			  "Interval" : "30",
+      			  "Timeout" : "5"
+    		  },
+    		  "Tags": [
+                      {
+                          "Key": "app",
+                          "Value": "megadiscourse"
+                      },
+                      {
+                          "Key": "env",
+                          "Value": "production"
+                      },
+                      {
+                          "Key": "project",
+                          "Value": "communityit"
+                      }
+                ]
+            }
+		    },
+        "alarmawselbcsadiscourseproductionHighUnhealthyHosts": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "ActionsEnabled": "true",
+                "AlarmDescription": "Created from EC2 Console",
+                "ComparisonOperator": "LessThanThreshold",
+                "EvaluationPeriods": "1",
+                "MetricName": "UnHealthyHostCount",
+                "Namespace": "AWS/ELB",
+                "Period": "60",
+                "Statistic": "Sum",
+                "Threshold": "0.0",
+                "Dimensions": [
+                    {
+                        "Name": "LoadBalancerName",
+                        "Value": "csa-megadiscourse-production"
+                    }
+                ]
+            }
+        }
+    },
+    "Outputs" : {
+        "lbDNSName" : {
+            "Value" : {"Fn::GetAtt": ["lb", "DNSName" ] },
+            "Description" : "This is the DNS name for the load balancer. On your domain name DNS settings, make an alias A record using this name."
+        }
+    },
+    "Description": "Discourse resources"
+}
