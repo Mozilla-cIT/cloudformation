@@ -51,7 +51,7 @@
                 "Tags": [
                     {
                         "Key": "app",
-                        "Value": "discourse",
+                        "Value": "megadiscourse",
                         "PropagateAtLaunch": true
                     },
                     {
