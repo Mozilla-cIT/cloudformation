@@ -86,7 +86,7 @@
           "Properties" : {
     			"Subnets": ["subnet-771cff2e", "subnet-8ca2a1a4", "subnet-df27e6a8"],
                 "SecurityGroups": ["sg-5798df32"],
-    			"LoadBalancerName": "csa-megadiscourse-main-staging-lb",
+    			"LoadBalancerName": "csa-discourse-main-staging",
     			"Listeners" : [ {
       			"LoadBalancerPort" : "80",
       			"InstancePort" : "8080",
