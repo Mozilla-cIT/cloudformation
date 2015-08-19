@@ -81,7 +81,7 @@
                 ]
             }
         },
-        "csa-megadiscourse-main-staging-lb" : {
+        "mainlb" : {
           "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
           "Properties" : {
     			"Subnets": ["subnet-771cff2e", "subnet-8ca2a1a4", "subnet-df27e6a8"],
@@ -140,7 +140,7 @@
     },
     "Outputs" : {
         "lbDNSName" : {
-            "Value" : {"Fn::GetAtt": ["lb", "DNSName" ] },
+            "Value" : {"Fn::GetAtt": ["mainlb", "DNSName" ] },
             "Description" : "This is the DNS name for the load balancer. On your domain name DNS settings, make an alias A record using this name."
         }
     },
