@@ -33,7 +33,7 @@
                     "Ref": "lc"
                 },
                 "LoadBalancerNames": [
-                    "csa-discourse-production-lb"
+                    "csa-discourse-staging-lb"
                 ],
                 "Tags": [
                     {
@@ -74,20 +74,20 @@
                 ]
             }
         },
-        "lb" : {
+        "csa-megadiscourse-main-staging-lb" : {
           "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
           "Properties" : {
     			"Subnets": ["subnet-771cff2e", "subnet-8ca2a1a4", "subnet-df27e6a8"],
                 "SecurityGroups": ["sg-5798df32"],
-    			"LoadBalancerName": "csa-discourse-production-lb",
+    			"LoadBalancerName": "csa-megadiscourse-main-staging-lb",
     			"Listeners" : [ {
       			"LoadBalancerPort" : "80",
-      			"InstancePort" : "80",
+      			"InstancePort" : "8080",
       			"Protocol" : "HTTP"
     		  } ],
     		  "HealthCheck" : {
       			  "Target" : {
-        		  "Fn::Join" : [ "", [ "HTTP:", "80", "/" ] ]
+        		  "Fn::Join" : [ "", [ "HTTP:", "8080", "/" ] ]
       			  },
       			  "HealthyThreshold" : "3",
       			  "UnhealthyThreshold" : "5",
