@@ -3,6 +3,13 @@
     "Resources": {
         "as": {
             "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "UpdatePolicy" : {
+                "AutoScalingRollingUpdate" : {
+                    "MaxBatchSize" : "2",
+                    "MinInstancesInService" : "0",
+                    "PauseTime" : "PT0M30S"
+                }
+            },
             "Properties": {
                 "AvailabilityZones": [
                     "us-east-1c",
