@@ -20,6 +20,57 @@
         "checkEnv" : {"Fn::Equals": ["production", {"Ref": "discourseEnvParam"}]}
     },
     "Resources": {
+    "lb" : {
+      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties" : {
+      "Subnets": ["subnet-771cff2e", "subnet-8ca2a1a4", "subnet-df27e6a8"],
+            "SecurityGroups": ["sg-5798df32"],
+      "LoadBalancerName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "csa",
+                            {
+                                "Ref": "discourseNameParam"
+                            },
+                            {
+                                "Ref": "discourseEnvParam"
+                            }
+                        ]
+                    ]
+                },
+      "Listeners" : [ {
+        "LoadBalancerPort" : "80",
+        "InstancePort" : "8081",
+        "Protocol" : "HTTP"
+      } ],
+      "HealthCheck" : {
+          "Target" : {
+          "Fn::Join" : [ "", [ "HTTP:", "8080", "/" ] ]
+          },
+          "HealthyThreshold" : "1",
+          "UnhealthyThreshold" : "5",
+          "Interval" : "30",
+          "Timeout" : "5"
+      },
+      "Tags": [
+                  {
+                      "Key": "app",
+                      "Value": "megadiscourse"
+                  },
+                  {
+                      "Key": "env",
+                      "Value": {
+                          "Ref": "discourseEnvParam"
+                      }
+                  },
+                  {
+                      "Key": "project",
+                      "Value": "communityit"
+                  }
+            ]
+        }
+    },
         "cache": {
             "Type": "AWS::ElastiCache::CacheCluster",
             "Properties": {
@@ -59,6 +110,10 @@
                         "discourse-shared-db.mofostaging.net"
                         ]},
             "Description" : "You need to make the database yourself on this server. Use this value for DISCOURSE_DB_HOST."
+        },
+        "lbDNSName" : {
+            "Value" : {"Fn::GetAtt": ["lb", "DNSName" ] },
+            "Description" : "This is the DNS name for the load balancer. On your domain name DNS settings, make a CNAME record using this name."
         }
     },
     "Description": "Discourse resources"
