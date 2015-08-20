@@ -40,7 +40,8 @@
                     "Ref": "lc"
                 },
                 "LoadBalancerNames": [
-                    "csa-discourse-main-staging"
+                    "csa-discourse-main-staging",
+                    "csa-ttw-staging"
                 ],
                 "Tags": [
                     {
