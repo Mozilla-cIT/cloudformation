@@ -41,7 +41,8 @@
                 },
                 "LoadBalancerNames": [
                     "csa-discourse-main-staging",
-                    "csa-ttw-staging"
+                    "csa-ttw-staging",
+                    "csa-sci-staging"
                 ],
                 "Tags": [
                     {
